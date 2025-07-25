@@ -1,0 +1,6 @@
+server:
+  port: 8761
+eureka:
+  client:
+    register-with-eureka: false # Server không t? ??ng ký v?i chính nó
+    fetch-registry: false # Server không l?y thông tin ??ng ký t? chính n
