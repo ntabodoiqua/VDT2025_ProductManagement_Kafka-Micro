@@ -7,11 +7,18 @@ spring:
   cloud:
     gateway:
       routes:
-        # ??nh tuy?n ??n d?ch v? user-service
+        #  user-service
         - id: user-service
           uri: lb://user-service
           predicates:
             - Path=/api/user/**
+          filters:
+            - StripPrefix=2
+        # product-service
+        - id: product-service
+          uri: lb://product-service
+          predicates:
+            - Path=/api/product/**
           filters:
             - StripPrefix=2
 eureka:

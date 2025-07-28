@@ -122,7 +122,8 @@ public class UserServiceImp implements UserService{
 
 
     @Override
-    @CacheEvict(value = "userCache", key = "#request")
+    @CacheEvict(value = "userCache",
+            key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getName()")
     @PreAuthorize("hasAnyRole('ADMIN', 'GUEST', 'MANAGER')")
     public UserResponse updateMyInfo(UserUpdateRequest request) {
         String username = SecurityContextHolder.getContext()
