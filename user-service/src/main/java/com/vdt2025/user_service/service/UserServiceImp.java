@@ -77,6 +77,16 @@ public class UserServiceImp implements UserService{
     }
 
     @Override
+    @Cacheable(value = "userCache", key = "#username")
+    public UserResponse getUserByUsername(String username) {
+        log.info("Fetching user information for username: {}", username);
+        // Tìm người dùng theo tên đăng nhập
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        return userMapper.toUserResponse(user);
+    }
+
+    @Override
     @PreAuthorize("hasAnyRole('ADMIN', 'GUEST', 'MANAGER')")
     public String changeMyPassword(String oldPassword, String newPassword) {
         String username = SecurityContextHolder.getContext()

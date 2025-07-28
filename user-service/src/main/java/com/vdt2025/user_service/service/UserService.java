@@ -17,5 +17,7 @@ public interface UserService {
 
     UserResponse updateMyInfo(UserUpdateRequest request);
 
+    UserResponse getUserByUsername(String username);
+
     String disableMyAccount();
 }

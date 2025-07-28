@@ -1,19 +1,35 @@
 package com.vdt2025.product_service.service;
 
+import com.vdt2025.common_dto.dto.response.UserResponse;
+import com.vdt2025.common_dto.service.UserServiceClient;
 import com.vdt2025.product_service.dto.request.category.CategoryCreationRequest;
+import com.vdt2025.product_service.dto.request.category.CategoryFilterRequest;
+import com.vdt2025.product_service.dto.request.category.CategoryUpdateRequest;
 import com.vdt2025.product_service.dto.response.CategoryResponse;
+import com.vdt2025.product_service.entity.Category;
+import com.vdt2025.product_service.entity.Product;
 import com.vdt2025.product_service.exception.AppException;
 import com.vdt2025.product_service.exception.ErrorCode;
 import com.vdt2025.product_service.mapper.CategoryMapper;
 import com.vdt2025.product_service.repository.CategoryRepository;
 import com.vdt2025.product_service.repository.ProductRepository;
+import com.vdt2025.product_service.specification.CategorySpecification;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +40,7 @@ public class CategoryServiceImp implements CategoryService{
 //    UserRepository userRepository;
     CategoryRepository categoryRepository;
     CategoryMapper categoryMapper;
+    UserServiceClient userServiceClient;
 //    FileStorageService fileStorageService;
 
     @Override
@@ -37,11 +54,12 @@ public class CategoryServiceImp implements CategoryService{
 
         // Lấy thông tin người dùng hiện tại từ SecurityContext
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserResponse currentUser = userServiceClient.getUserByUsername(username).getResult();
         log.info("Current user: {}", username);
 
         // Tạo danh mục mới
         var category = categoryMapper.toCategory(request);
-        category.setCreatedBy();
+        category.setCreatedBy(currentUser.getId());
         category = categoryRepository.save(category);
         log.info("Category {} created successfully by user {}", category.getName(), currentUser.getUsername());
         // Trả về thông tin danh mục đã tạo
@@ -49,6 +67,7 @@ public class CategoryServiceImp implements CategoryService{
     }
 
     @Override
+    @Cacheable(value = "categories", key = "#filter.toString() + #pageable.toString()")
     public Page<CategoryResponse> searchCategories(CategoryFilterRequest filter, Pageable pageable) {
         Specification<Category> spec = CategorySpecification.withFilter(filter);
         Page<Category> resultPage = categoryRepository.findAll(spec, pageable);
@@ -56,6 +75,7 @@ public class CategoryServiceImp implements CategoryService{
     }
 
     @Override
+    @Cacheable(value = "categories", key = "#id")
     public CategoryResponse getCategoryById(String id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
@@ -64,6 +84,7 @@ public class CategoryServiceImp implements CategoryService{
     }
 
     @Override
+    @CacheEvict(value = "categories", key = "#id")
     @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
     public CategoryResponse updateCategory(String id, CategoryUpdateRequest request) {
         Category category = categoryRepository.findById(id)
@@ -71,17 +92,13 @@ public class CategoryServiceImp implements CategoryService{
 
         // Lấy thông tin người dùng hiện tại từ SecurityContext
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        var currentUser = userRepository.findByUsername(username)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-        // Kiểm tra xem người dùng có phải admin không
-        boolean isAdmin = currentUser.getRole().getName().equals("ADMIN");
-        // Kiểm tra xem người dùng có phải người tạo danh mục không
-        boolean isOwner = category.getCreatedBy().getUsername().equals(currentUser.getUsername());
-        // Nếu không phải admin và cũng không phải người tạo danh mục, không cho phép cập nhật
-        if (!isAdmin && !isOwner) {
-            log.warn("User {} is not authorized to update category {}", currentUser.getUsername(), category.getName());
+
+        // Kiểm tra quyền truy cập
+        if (!checkAccessRights(category)) {
+            log.warn("User {} does not have access rights to update category {}", username, category.getName());
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
+
         // Kiểm tra xem tên danh mục mới có trùng với danh mục khác không
         if (!category.getName().equalsIgnoreCase(request.getName())
                 && categoryRepository.existsByName(request.getName())) {
@@ -89,8 +106,7 @@ public class CategoryServiceImp implements CategoryService{
             throw new AppException(ErrorCode.CATEGORY_EXISTED);
         }
         // Cập nhật thông tin danh mục
-        category.setName(request.getName());
-        category.setDescription(request.getDescription());
+        categoryMapper.updateCategory(category, request);
         category = categoryRepository.save(category);
 
         log.info("Category {} updated successfully", category.getName());
@@ -98,35 +114,36 @@ public class CategoryServiceImp implements CategoryService{
     }
 
     // Cập nhật thumbnail của danh mục
-    @Override
-    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
-    public String setCategoryThumbnail(String id, MultipartFile file) {
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
-
-        // Kiểm tra quyền truy cập
-        if (!checkAccessRights(category)) {
-            log.warn("User does not have access rights to update thumbnail for category {}", category.getName());
-            throw new AppException(ErrorCode.UNAUTHORIZED);
-        }
-
-        // Cập nhật thumbnail
-        String contentType = file.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            log.warn("Invalid file type for thumbnail: {}", contentType);
-            throw new AppException(ErrorCode.INVALID_IMAGE_TYPE);
-        }
-
-        String fileName = fileStorageService.storeFile(file);
-        category.setImageName(fileName);
-        categoryRepository.save(category);
-        log.info("Thumbnail for category {} updated successfully", category.getName());
-        return fileName;
-    }
+//    @Override
+//    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
+//    public String setCategoryThumbnail(String id, MultipartFile file) {
+//        Category category = categoryRepository.findById(id)
+//                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+//
+//        // Kiểm tra quyền truy cập
+//        if (!checkAccessRights(category)) {
+//            log.warn("User does not have access rights to update thumbnail for category {}", category.getName());
+//            throw new AppException(ErrorCode.UNAUTHORIZED);
+//        }
+//
+//        // Cập nhật thumbnail
+//        String contentType = file.getContentType();
+//        if (contentType == null || !contentType.startsWith("image/")) {
+//            log.warn("Invalid file type for thumbnail: {}", contentType);
+//            throw new AppException(ErrorCode.INVALID_IMAGE_TYPE);
+//        }
+//
+//        String fileName = fileStorageService.storeFile(file);
+//        category.setImageName(fileName);
+//        categoryRepository.save(category);
+//        log.info("Thumbnail for category {} updated successfully", category.getName());
+//        return fileName;
+//    }
 
     @Override
     @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
     @Transactional
+    @CacheEvict(value = "categories", key = "#id")
     public void deleteCategory(String id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
@@ -156,11 +173,10 @@ public class CategoryServiceImp implements CategoryService{
     // Hàm chung để kiểm tra quyền truy cập
     private boolean checkAccessRights(Category category) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User currentUser = userRepository.findByUsername(username)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        UserResponse currentUser = userServiceClient.getUserByUsername(username).getResult();
 
         boolean isAdmin = currentUser.getRole().getName().equals("ADMIN");
-        boolean isOwner = category.getCreatedBy().getUsername().equals(currentUser.getUsername());
+        boolean isOwner = category.getCreatedBy().equals(currentUser.getId());
 
         if (!isAdmin && !isOwner) {
             log.warn("User {} is not authorized to access category {}", currentUser.getUsername(), category.getName());

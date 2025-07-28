@@ -36,6 +36,13 @@ public class UserController {
                 .build();
     }
 
+    @GetMapping("/{username}")
+    ApiResponse<UserResponse> getUserByUsername(@PathVariable String username) {
+        return ApiResponse.<UserResponse>builder()
+                .result(userService.getUserByUsername(username))
+                .build();
+    }
+
     @PutMapping("/changePassword")
     ApiResponse<String> changeMyPassword(@RequestBody @Valid UserChangePasswordRequest request) {
         var result = userService.changeMyPassword(request.getOldPassword(), request.getNewPassword());
