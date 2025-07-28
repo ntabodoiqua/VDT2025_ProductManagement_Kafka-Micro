@@ -29,7 +29,8 @@ public class SecurityConfig {
             "/swagger-ui/**",
             "/swagger-ui.html",
             "/swagger-resources/**",
-            "/webjars/**"
+            "/webjars/**",
+            "/uploads/**"
     };
 
     private static final String[] PUBLIC_POST_ENDPOINTS = {

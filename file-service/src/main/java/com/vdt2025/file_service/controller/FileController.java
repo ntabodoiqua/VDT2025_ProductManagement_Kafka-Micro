@@ -36,7 +36,7 @@ public class FileController {
 
         // Tạo đường dẫn đầy đủ để client có thể truy cập file sau này
         String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
-                .path("/files/")
+                .path("/uploads/")
                 .path(fileName)
                 .toUriString();
 
