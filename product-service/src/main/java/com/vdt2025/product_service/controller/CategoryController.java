@@ -53,16 +53,16 @@ public class CategoryController {
                 .build();
     }
 
-//    // Cập nhật ảnh đại diện cho danh mục
-//    @PostMapping("/{id}/thumbnail")
-//    public ApiResponse<String> setCategoryThumbnail(
-//            @PathVariable String id,
-//            @RequestParam("file") MultipartFile file) {
-//        String thumbnailUrl = categoryService.setCategoryThumbnail(id, file);
-//        return ApiResponse.<String>builder()
-//                .result(thumbnailUrl)
-//                .build();
-//    }
+    // Cập nhật ảnh đại diện cho danh mục
+    @PostMapping("/{id}/thumbnail")
+    public ApiResponse<String> setCategoryThumbnail(
+            @PathVariable String id,
+            @RequestParam("file") MultipartFile file) {
+        String thumbnailUrl = categoryService.setCategoryThumbnail(id, file);
+        return ApiResponse.<String>builder()
+                .result(thumbnailUrl)
+                .build();
+    }
 
     // Cập nhật danh mục
     @PutMapping("/{id}")

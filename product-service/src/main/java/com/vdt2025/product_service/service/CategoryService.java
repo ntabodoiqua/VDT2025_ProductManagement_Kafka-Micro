@@ -16,7 +16,7 @@ public interface CategoryService {
 
     CategoryResponse updateCategory(String id, CategoryUpdateRequest request);
 
-//    String setCategoryThumbnail(String id, MultipartFile file);
+    String setCategoryThumbnail(String id, MultipartFile file);
 
     void deleteCategory(String id);
 

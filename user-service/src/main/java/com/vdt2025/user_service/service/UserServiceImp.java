@@ -1,5 +1,6 @@
 package com.vdt2025.user_service.service;
 
+import com.vdt2025.common_dto.service.FileServiceClient;
 import com.vdt2025.user_service.constant.PredefinedRole;
 import com.vdt2025.user_service.dto.request.user.UserCreationRequest;
 import com.vdt2025.user_service.dto.request.user.UserUpdateRequest;
@@ -33,6 +34,7 @@ public class UserServiceImp implements UserService{
     UserRepository userRepository;
     UserMapper userMapper;
     PasswordEncoder passwordEncoder;
+    FileServiceClient fileServiceClient;
     // FileStorageService fileStorageService;
 
     @Override
@@ -112,23 +114,23 @@ public class UserServiceImp implements UserService{
         return "Password changed successfully";
     }
 
-//    @Override
-//    @PreAuthorize("hasAnyRole('ADMIN', 'GUEST', 'MANAGER')")
-//    public String setMyAvatar(MultipartFile file) {
-//        String username = SecurityContextHolder.getContext()
-//                .getAuthentication().getName();
-//        User user = userRepository.findByUsername(username)
-//                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-//        String contentType = file.getContentType();
-//        if (contentType == null || !contentType.startsWith("image/")) {
-//            throw new AppException(ErrorCode.INVALID_IMAGE_TYPE);
-//        }
-//
-//        String fileName = fileStorageService.storeFile(file);
-//        user.setAvatarName(fileName);
-//        userRepository.save(user);
-//        return fileName;
-//    }
+    @Override
+    @PreAuthorize("hasAnyRole('ADMIN', 'GUEST', 'MANAGER')")
+    public String setMyAvatar(MultipartFile file) {
+        String username = SecurityContextHolder.getContext()
+                .getAuthentication().getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new AppException(ErrorCode.INVALID_IMAGE_TYPE);
+        }
+
+        String fileName = fileServiceClient.uploadFile(file).getResult();
+        user.setAvatarName(fileName);
+        userRepository.save(user);
+        return fileName;
+    }
 
 
     @Override

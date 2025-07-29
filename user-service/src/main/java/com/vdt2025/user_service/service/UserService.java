@@ -13,7 +13,7 @@ public interface UserService {
 
     String changeMyPassword(String oldPassword, String newPassword);
 
-//    String setMyAvatar(MultipartFile file);
+    String setMyAvatar(MultipartFile file);
 
     UserResponse updateMyInfo(UserUpdateRequest request);
 

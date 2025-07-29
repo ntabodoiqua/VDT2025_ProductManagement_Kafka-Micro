@@ -88,4 +88,18 @@ public class FileController {
                 .message("File '" + fileName + "' has been deleted successfully.")
                 .build();
     }
+
+    // Lấy đường dẫn của file đã tải lên
+    // Thêm địa chỉ host + port + "/uploads/" vào tên file để tạo đường dẫn đầy đủ
+    @GetMapping("/path/{fileName}")
+    public ApiResponse<String> getFilePath(@PathVariable String fileName) {
+        String filePath = ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/uploads/")
+                .path(fileName)
+                .toUriString();
+        return ApiResponse.<String>builder()
+                .result(filePath)
+                .message("File path retrieved successfully.")
+                .build();
+    }
 }

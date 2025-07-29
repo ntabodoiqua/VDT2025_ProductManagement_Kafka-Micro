@@ -1,6 +1,7 @@
 package com.vdt2025.product_service.service;
 
 import com.vdt2025.common_dto.dto.response.UserResponse;
+import com.vdt2025.common_dto.service.FileServiceClient;
 import com.vdt2025.common_dto.service.UserServiceClient;
 import com.vdt2025.product_service.dto.request.category.CategoryCreationRequest;
 import com.vdt2025.product_service.dto.request.category.CategoryFilterRequest;
@@ -28,6 +29,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -41,6 +43,7 @@ public class CategoryServiceImp implements CategoryService{
     CategoryRepository categoryRepository;
     CategoryMapper categoryMapper;
     UserServiceClient userServiceClient;
+    FileServiceClient fileServiceClient;
 //    FileStorageService fileStorageService;
 
     @Override
@@ -114,31 +117,30 @@ public class CategoryServiceImp implements CategoryService{
     }
 
     // Cập nhật thumbnail của danh mục
-//    @Override
-//    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
-//    public String setCategoryThumbnail(String id, MultipartFile file) {
-//        Category category = categoryRepository.findById(id)
-//                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
-//
-//        // Kiểm tra quyền truy cập
-//        if (!checkAccessRights(category)) {
-//            log.warn("User does not have access rights to update thumbnail for category {}", category.getName());
-//            throw new AppException(ErrorCode.UNAUTHORIZED);
-//        }
-//
-//        // Cập nhật thumbnail
-//        String contentType = file.getContentType();
-//        if (contentType == null || !contentType.startsWith("image/")) {
-//            log.warn("Invalid file type for thumbnail: {}", contentType);
-//            throw new AppException(ErrorCode.INVALID_IMAGE_TYPE);
-//        }
-//
-//        String fileName = fileStorageService.storeFile(file);
-//        category.setImageName(fileName);
-//        categoryRepository.save(category);
-//        log.info("Thumbnail for category {} updated successfully", category.getName());
-//        return fileName;
-//    }
+    @Override
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")
+    public String setCategoryThumbnail(String id, MultipartFile file) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+
+        // Kiểm tra quyền truy cập
+        if (!checkAccessRights(category)) {
+            log.warn("User does not have access rights to update thumbnail for category {}", category.getName());
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        // Cập nhật thumbnail
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            log.warn("Invalid file type for thumbnail: {}", contentType);
+            throw new AppException(ErrorCode.INVALID_IMAGE_TYPE);
+        }
+        String fileName = fileServiceClient.uploadFile(file).getResult();
+        category.setImageName(fileName);
+        categoryRepository.save(category);
+        log.info("Thumbnail for category {} updated successfully", category.getName());
+        return fileName;
+    }
 
     @Override
     @PreAuthorize("hasRole('ADMIN') or hasRole('MANAGER')")

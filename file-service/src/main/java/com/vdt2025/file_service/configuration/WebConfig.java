@@ -1,8 +1,10 @@
 package com.vdt2025.file_service.configuration;
 
+import com.vdt2025.file_service.interceptor.UserStatusInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.*;
+import org.springframework.web.util.UrlPathHelper;
 
 @Configuration
 @RequiredArgsConstructor
@@ -12,8 +14,8 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // Chỉ map URL /uploads/public/** tới thư mục uploads/public/
-        registry.addResourceHandler("/uploads/public/**")
-                .addResourceLocations("file:uploads/public/");
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations("file:uploads/");
 
         // Không map /uploads/private/** để buộc phải qua controller với authentication
     }
@@ -48,17 +50,11 @@ public class WebConfig implements WebMvcConfigurer {
                         "/users",
                         "/category/get-categories",
                         "/category",
-                        "/uploads/public/**",
+                        "/uploads/**",
                         "/files/download/**",
-                        "/courses/**",
-                        "/lessons",
-                        "/instructors/public/**",
                         "/swagger-ui/**",
                         "/v3/api-docs/**",
-                        "/swagger-ui.html",
-                        "/course-reviews/approved/**",
-                        "/course-reviews/public/**",
-                        "**/public/**"
+                        "/swagger-ui.html"
                 );
     }
 
