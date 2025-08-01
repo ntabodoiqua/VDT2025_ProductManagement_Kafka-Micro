@@ -52,14 +52,14 @@ public class UserController {
     }
 
     // Controller người dùng cập nhật avatar
-//    @PostMapping("/avatar")
-//    public ApiResponse<String> setAvatar(@RequestParam("file") MultipartFile file) {
-//        var result = userService.setMyAvatar(file);
-//        return ApiResponse.<String>builder()
-//                .message("Avatar updated successfully")
-//                .result(result)
-//                .build();
-//    }
+    @PostMapping("/avatar")
+    public ApiResponse<String> setAvatar(@RequestParam("file") MultipartFile file) {
+        var result = userService.setMyAvatar(file);
+        return ApiResponse.<String>builder()
+                .message("Avatar updated successfully")
+                .result(result)
+                .build();
+    }
 
     // Controller người dùng cập nhật thông tin cá nhân
     @PutMapping("/myInfo")

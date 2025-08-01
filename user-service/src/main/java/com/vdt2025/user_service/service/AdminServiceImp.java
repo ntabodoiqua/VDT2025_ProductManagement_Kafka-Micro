@@ -20,6 +20,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -33,10 +35,11 @@ public class AdminServiceImp implements AdminService{
     // Lấy danh sách người dùng
     @Override
     @PreAuthorize("hasRole('ADMIN')")
-    public Page<UserResponse> getUsers(Pageable pageable) {
-        log.info("Fetching users with pagination: {}", pageable);
-        return userRepository.findAll(pageable)
-                .map(userMapper::toUserResponse);
+    public List<UserResponse> getUsers() {
+        log.info("Fetching users list");
+        return userRepository.findAll().stream()
+                .map(userMapper::toUserResponse)
+                .toList();
     }
 
     // Bộ lọc người dùng

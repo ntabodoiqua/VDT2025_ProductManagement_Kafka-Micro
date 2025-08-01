@@ -28,6 +28,8 @@ public enum ErrorCode {
     FILE_CANNOT_STORED(1301, "File cannot be stored", HttpStatus.INTERNAL_SERVER_ERROR),
     FILE_NOT_FOUND(1302, "File cannot be found", HttpStatus.NOT_FOUND),
     INVALID_IMAGE_TYPE(1303, "Invalid image type", HttpStatus.BAD_REQUEST),
+    EXCEL_IMPORT_ERROR(1304, "Error importing Excel file", HttpStatus.INTERNAL_SERVER_ERROR),
+    EXCEL_EXPORT_ERROR(1305, "Error exporting Excel file", HttpStatus.INTERNAL_SERVER_ERROR),
     // Lỗi vai trò (14xx)
     ROLE_NOT_FOUND(1401, "Role not found", HttpStatus.NOT_FOUND),
     ROLE_EXISTED(1402, "Role already exists", HttpStatus.CONFLICT),

@@ -1,5 +1,6 @@
 package com.vdt2025.user_service.service;
 
+import com.vdt2025.common_dto.dto.UserCreatedEvent;
 import com.vdt2025.common_dto.service.FileServiceClient;
 import com.vdt2025.user_service.constant.PredefinedRole;
 import com.vdt2025.user_service.dto.request.user.UserCreationRequest;
@@ -19,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -35,6 +37,7 @@ public class UserServiceImp implements UserService{
     UserMapper userMapper;
     PasswordEncoder passwordEncoder;
     FileServiceClient fileServiceClient;
+    KafkaTemplate<String, Object> kafkaTemplate;
     // FileStorageService fileStorageService;
 
     @Override
@@ -55,11 +58,17 @@ public class UserServiceImp implements UserService{
         user.setEnabled(true);
         // Lưu người dùng vào cơ sở dữ liệu
         try {
-            userRepository.save(user);
+            user = userRepository.save(user);
         } catch (DataIntegrityViolationException e) {
             throw new AppException(ErrorCode.USER_EXISTED);
         }
-
+        com.vdt2025.common_dto.dto.UserCreatedEvent event = UserCreatedEvent.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .build();
+        kafkaTemplate.send("welcome-email-topic", event);
+        log.info("User {} created successfully with ID {}", user.getUsername(), user.getId());
         return userMapper.toUserResponse(user);
     }
 
