@@ -12,6 +12,12 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "*"
+    listener:
+      retry:
+        max-attempts: 3
+        back-off-period: 1000
+      dead-letter:
+        topic: welcome-email-topic.DLT
   mail:
     host: smtp.gmail.com
     port: 587

@@ -32,4 +32,22 @@ public class EmailService {
             throw new RuntimeException("Failed to send welcome email", e);
         }
     }
+
+    public void sendErrorEmailToAdmin(String errorMessage) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo("anhnta2004@gmail.com");
+        message.setSubject("Lỗi trong dịch vụ thông báo NTA VDT_2025");
+        message.setText("Đã xảy ra lỗi trong dịch vụ thông báo NTA VDT_2025:\n\n" +
+                errorMessage + "\n\n" +
+                "Vui lòng kiểm tra và xử lý kịp thời.\n\n" +
+                "Trân trọng,\n" +
+                "Đội ngũ NTA VDT_2025");
+        try {
+            mailSender.send(message);
+            log.info("Error email sent to admin");
+        } catch (Exception e) {
+            log.error("Failed to send error email to admin: {}", e.getMessage());
+            throw new RuntimeException("Failed to send error email to admin", e);
+        }
+    }
 }
