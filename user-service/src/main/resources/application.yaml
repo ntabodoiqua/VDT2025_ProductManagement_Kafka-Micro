@@ -39,3 +39,12 @@ jwt:
 file:
   directory: ./uploads/
   max-size: 10MB
+management:
+  tracing:
+    sampling:
+      # Tỷ lệ lấy mẫu.
+      probability: 1.0
+  zipkin:
+    tracing:
+      # Địa chỉ của Zipkin server
+      endpoint: http://localhost:9411/api/v2/spans
