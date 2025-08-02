@@ -1,12 +1,17 @@
 package com.vdt2025.notification_service.service;
 
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
 
 @Service
 @RequiredArgsConstructor
@@ -14,20 +19,30 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class EmailService {
     JavaMailSender mailSender;
+    TemplateEngine templateEngine; // Thêm TemplateEngine
 
     public void sendWelcomeEmail(String to, String username) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject("Chào mừng đến với NTA VDT_2025!");
-        message.setText("Xin chào " + username + ",\n\n" +
-                "Cảm ơn bạn đã đăng ký tài khoản trên NTA VDT_2025. Chúng tôi rất vui mừng chào đón bạn đến với cộng đồng của chúng tôi.\n\n" +
-                "Nếu bạn có bất kỳ câu hỏi nào, xin vui lòng liên hệ với chúng tôi qua email này.\n\n" +
-                "Trân trọng,\n" +
-                "Đội ngũ NTA VDT_2025");
+        // Chuẩn bị các biến cho template
+        final String subject = "Chào mừng đến với NTA VDT_2025!";
+        Context context = new Context();
+        context.setVariable("username", username);
+        context.setVariable("subject", subject);
+
+        // Render template HTML thành một chuỗi String
+        String htmlContent = templateEngine.process("welcome-email", context);
+
         try {
-            mailSender.send(message);
+            // Sử dụng MimeMessage và MimeMessageHelper để gửi email HTML
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(htmlContent, true); // true để chỉ định đây là nội dung HTML
+
+            mailSender.send(mimeMessage);
             log.info("Welcome email sent to {}", to);
-        } catch (Exception e) {
+        } catch (MessagingException e) {
             log.error("Failed to send welcome email to {}: {}", to, e.getMessage());
             throw new RuntimeException("Failed to send welcome email", e);
         }
